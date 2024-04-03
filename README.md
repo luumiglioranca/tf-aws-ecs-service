@@ -40,8 +40,7 @@ Este módulo irá provisionar os seguintes recursos:
 ############################################################################################
 
 module "ecs_service" {
-  source = "git@github.com:luumiglioranca/tf-aws-ecs-service.git//resource"
-  
+  source       = "git@github.com:luumiglioranca/tf-aws-ecs-service.git//resource"
   cluster_name = local.cluster_name
   cluster_type = local.launch_type
 
@@ -56,7 +55,7 @@ module "ecs_service" {
     managed_tags                       = "true"
 
     load_balancer = {
-      target_group_arn = "arn:aws:elasticloadbalancing:us-east-1:333955165884:targetgroup/tg-back-ead-bff-hmg-n/7f957784d9c589ab"
+      target_group_arn = "${local.target_group_arn}"
       container_name   = "container-${local.resource_name}"
       container_port   = "${local.container_port}"
     }
@@ -142,7 +141,7 @@ module "ecs_service" {
           "logConfiguration" : {
             "logDriver" : "awslogs",
             "options" : {
-              "awslogs-group" : "/${local.account_name}/ecs-${local.cluster_name}/svc-${local.resource_name}",
+              "awslogs-group" : "/${local.account_name}/${local.cluster_name}/${local.resource_name}",
               "awslogs-region" : "${local.region}",
               "awslogs-stream-prefix" : "${local.resource_name}"
             }
@@ -168,11 +167,26 @@ module "ecs_service" {
 
 ############################################################################################
 #                                                                                          #
+#                           LOG GROUP DO NOSSO QUERIDO CLOUDWATCH                          #
+#                                                                                          #
+############################################################################################
+
+resource "aws_cloudwatch_log_group" "main" {
+  name              = "/${local.account_name}/${local.cluster_name}/svc-${local.resource_name}"
+  retention_in_days = local.cloudwatch_retention
+  tags              = local.default_tags
+
+  # depends_on = [ aws_iam_role.main ]
+}
+
+############################################################################################
+#                                                                                          #
 #                         MÓDULO PARA CRIAÇÃO DO SECURITY GROUP :)                         #
 #                                                                                          #
 ############################################################################################
 
 module "security_group" {
+
   source = "git@github.com:luumiglioranca/tf-aws-security-group.git//resource"
 
   description         = "Security Group para o ${local.resource_name} :)"
@@ -194,7 +208,7 @@ module "security_group" {
       from_port   = "${local.from_port}"
       to_port     = "${local.to_port}"
       protocol    = "${local.tcp_protocol}"
-      cidr_blocks = ["172.30.160.0/20"]
+      cidr_blocks = ["x.x.x.x/x"]
     }
   ]
 
